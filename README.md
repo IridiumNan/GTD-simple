@@ -1,0 +1,21 @@
+# GTD System
+
+The five step from GTD (Getting things done)
+
+- Capture
+- Clarify
+- Organize
+- Review
+- Engage
+
+---
+
+## What
+
+This program is aims to build a cross-device capture box so that you can capture your thoughts by phone, computer, tablet or other network devices.
+
+It use html, js, golang
+
+> [!NOTE]
+> It just a minimal system without polish
+> for personal use

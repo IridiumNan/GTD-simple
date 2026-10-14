@@ -1,0 +1,117 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: #fafaf9;
+    color: #1c1c1a;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 18vh 24px 48px;
+}
+
+main {
+    width: 100%;
+    max-width: 520px;
+}
+
+h1 {
+    margin: 0 0 14px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #a1a1a0;
+}
+
+/* 输入框 */
+input {
+    width: 100%;
+    padding: 14px 2px;
+    font: inherit;
+    font-size: 18px;
+    color: inherit;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #e7e6e3;
+    outline: none;
+    transition: border-color .2s;
+}
+
+input::placeholder {
+    color: #c9c8c5;
+}
+
+input:focus {
+    border-bottom-color: #1c1c1a;
+}
+
+/* 列表 */
+ul {
+    list-style: none;
+    margin: 22px 0 0;
+    padding: 0;
+}
+
+li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 2px;
+    border-bottom: 1px solid #f1f0ed;
+    animation: in .18s ease;
+}
+
+@keyframes in {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+li span {
+    flex: 1;
+    word-break: break-word;
+}
+
+li button {
+    padding: 2px 4px;
+    font-size: 18px;
+    line-height: 1;
+    color: #c9c8c5;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s, color .15s;
+}
+
+li:hover button {
+    opacity: 1;
+}
+
+li button:hover {
+    color: #d9534f;
+}
+
+/* 触屏设备：删除键常显 */
+@media (hover: none) {
+    li button {
+        opacity: 1;
+    }
+}
+
+.empty {
+    margin: 22px 0 0;
+    font-size: 14px;
+    color: #c9c8c5;
+}
