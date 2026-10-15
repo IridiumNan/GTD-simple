@@ -1,6 +1,9 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -25,4 +28,24 @@ func NewStuff(raw string) *Stuff {
 		Raw:   strings.TrimSpace(raw),
 		IsDel: false,
 	}
+}
+
+type StuffStat struct {
+	Size int64 `json:"size"`
+
+	Count int `json:"count"`
+}
+
+func (ss *StuffStat) String() string {
+	return fmt.Sprintf("%d stuff with size: %s", ss.Count, utils.FormatBytes(ss.Size))
+}
+
+func (ss *StuffStat) JSON() []byte {
+	data, err := json.Marshal(ss)
+	if err != nil {
+		slog.Error("error while unmarshal stuff stat into json byte data", "err", err, "stat", ss)
+		return nil
+	}
+
+	return data
 }

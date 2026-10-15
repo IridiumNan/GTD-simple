@@ -9,9 +9,10 @@ func Router() *gin.Engine {
 
 	r.POST("/capture/create", handlerCaptureCreate)
 	r.DELETE("/capture/delete/:id", handlerCaptureDelete)
-	r.GET("/capture/fetch/:id")
+	r.GET("/capture/fetch/:id", handlerCaptureFetch)
+	r.DELETE("/capture/clear", handlerCaptureClear)
 
-	r.Static("/", "./front")
+	r.Static("/static", "./front")
 
 	return r
 }

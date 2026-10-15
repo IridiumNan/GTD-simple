@@ -4,6 +4,9 @@
 
 Request
 
+> [!NOTE]
+> Let the id as empty string so backend will auto generate
+
 ```json
 {
     "data": {
@@ -22,7 +25,12 @@ Response
 {
     "msg": "submit success",
     "data": {
-        "id": "isfjaoigqrfaoij"
+        "id": "isfjaoigqrfaoij",
+
+        "stat": {
+            "count": 3,
+            "size": 12345
+        }
     }
 }
 ```
@@ -42,7 +50,12 @@ In success case
 ```json
 {
     "msg": "stuff has been marked is deleted id: fisdfjaifnasdfi ",
-    "data": null
+    "data": {
+        "stat": {
+            "count": 3,
+            "size": 12345
+        }
+    }
 }
 ```
 
@@ -53,7 +66,13 @@ In not found case
 ```json
 {
     "msg": "stuff not found, this request is omitted, id: fjaiosaoisf ",
-    "data": null
+    "data": {
+
+        "stat": {
+            "count": 3,
+            "size": 12345
+        }
+    }
 }
 ```
 
@@ -62,6 +81,8 @@ In not found case
 - `/capture/fetch/{id}` GET
 
 Request not contains JSON
+
+Response
 
 In success case
 
@@ -91,3 +112,27 @@ In not found case
     
 }
 ```
+
+---
+
+- `/capture/clear` DELETE
+
+Request not contains JSON
+
+Response
+
+200
+
+```json
+{
+    "msg": "all not used stuff has been removed",
+    "data": {
+        "stat": {
+            "count": 3,
+            "size": 12345
+        }
+    }
+}
+```
+
+---

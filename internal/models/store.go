@@ -18,6 +18,13 @@ type Store interface {
 	// if f(s) == false, this stuff will be dropped
 	All(f func(s *Stuff) bool) []*Stuff
 
+	// Clear all stuffs that have been marked as deleted
+	Clear()
+
+	// Stat return current stuffs status
+	// Count and byte size
+	Stat() *StuffStat
+
 	// Flush write all data on RAM to disk
 	Flush() error
 }
