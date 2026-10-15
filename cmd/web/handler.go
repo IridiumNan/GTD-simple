@@ -111,3 +111,15 @@ func handlerCaptureAll(c *gin.Context) {
 		"stat":   store.Stat(),
 	}))
 }
+
+func handlerCaptureFlush(c *gin.Context) {
+	err := store.Flush()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewResponse(fmt.Sprintf("Flush error: %s", err.Error()), nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, NewResponse("Flush success", gin.H{
+		"stat": store.Stat(),
+	}))
+}

@@ -1,4 +1,4 @@
-# API
+# Capture API
 
 - `/capture/create` POST
 
@@ -117,6 +117,9 @@ In not found case
 
 - `/capture/clear` DELETE
 
+> [!NOTE]
+> soft-deleted stuff will be really deleted only clear is called
+
 Request not contains JSON
 
 Response
@@ -186,5 +189,34 @@ Response
             "size": 123
         }
     }
+}
+```
+
+---
+
+- `/capture/flush` POST
+
+Response
+
+200
+
+```json
+{
+    "msg": "Flush success",
+    "data": {
+        "stat": {
+            "count": 2,
+            "size": 123
+        }
+    }
+}
+```
+
+500 when Flush return err
+
+```json
+{
+    "msg": "Flush error: err.Error",
+    "data": null
 }
 ```
