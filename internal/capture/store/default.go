@@ -37,6 +37,7 @@ func Fetch(id string) *models.Stuff {
 }
 
 // All call default json store All function
+// For filter all deleted stuffs, use [FilterNotDeleted]
 func All(f func(s *models.Stuff) bool) []*models.Stuff {
 	return ds.All(f)
 }

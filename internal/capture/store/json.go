@@ -11,6 +11,10 @@ import (
 	"github.com/IridiumNan/GTD-simple/internal/utils"
 )
 
+type JSONData struct {
+	Stuffs []*models.Stuff `json:"stuffs"`
+}
+
 type JSONStore struct {
 	// stuffs is all stuff on RAM
 	// The key is [models.Stuff.ID]
@@ -55,19 +59,17 @@ func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
 		slog.Error("error while flushing data into json file before list all", "err", err)
 	}
 
-	allStuffs := make([]*models.Stuff, 0, len(js.stuffs))
 	if f == nil {
-		return allStuffs
+		return utils.MapV(js.stuffs)
 	}
 
 	r := make([]*models.Stuff, 0, len(js.stuffs))
-	for _, s := range allStuffs {
+	for _, s := range js.stuffs {
 		if !f(s) {
 			continue
 		}
 		r = append(r, s)
 	}
-
 	return r
 }
 
@@ -83,7 +85,8 @@ func (js *JSONStore) Clear() {
 
 // Flush is a implement for [models.Store.Flush]
 func (js *JSONStore) Flush() error {
-	data, err := json.Marshal(js.stuffs)
+	jd := JSONData{Stuffs: utils.MapV(js.stuffs)}
+	data, err := json.Marshal(jd)
 	if err != nil {
 		return fmt.Errorf("error while marshal stuffs into byte data, err: %s", err.Error())
 	}
@@ -137,15 +140,15 @@ func loadFromJSON(file string) *JSONStore {
 		slog.Warn("failed to load data from json file", "err", err)
 		return nil
 	}
-	stuffs := make([]*models.Stuff, 0, 10)
-	err = json.Unmarshal(data, &stuffs)
+	var jd JSONData
+	err = json.Unmarshal(data, &jd)
 	if err != nil {
 		slog.Error("error while unmarshal json data from file", "err", err)
 		return nil
 	}
 
 	return &JSONStore{
-		stuffs: buildStuffMap(stuffs),
+		stuffs: buildStuffMap(jd.Stuffs),
 		fp:     file,
 	}
 }

@@ -31,9 +31,8 @@ func NewStuff(raw string) *Stuff {
 }
 
 type StuffStat struct {
-	Size int64 `json:"size"`
-
-	Count int `json:"count"`
+	Count int   `json:"count"`
+	Size  int64 `json:"size"`
 }
 
 func (ss *StuffStat) String() string {

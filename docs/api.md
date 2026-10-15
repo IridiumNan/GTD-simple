@@ -136,3 +136,55 @@ Response
 ```
 
 ---
+
+- `/capture/all/*filter` GET
+
+| filter | desc |
+| --- | --- |
+| default | filter deleted stuffs |
+| none | get all stuffs |
+
+Response
+
+200
+
+```json
+{
+    "msg": "get all stuffs not deleted success",
+    "data": {
+        "stuffs": [
+            {
+
+                "id": "jfaosihgoifj",
+                "raw": "This is first stuff",
+                "is_del": false
+            },
+            {
+
+                "id": "fjiasdhfaoij",
+                "raw": "This is second stuff",
+                "is_del": false
+            }
+        ],
+        "stat": {
+            "count": 3,
+            "size": 12345
+        }
+    }
+
+}
+```
+
+404
+
+```json
+{
+    "msg": "There is no stuff",
+    "data": {
+        "stat": {
+            "count": 2,
+            "size": 123
+        }
+    }
+}
+```

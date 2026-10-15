@@ -69,11 +69,13 @@ func handlerCaptureFetch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, NewResponse("stuff found", map[string]any{
-		"stuf": stuf,
+	c.JSON(http.StatusOK, NewResponse("stuff found", gin.H{
+		"stuff": stuf,
 	}))
 }
 
+// handlerCaptureClear clear all deleted stuffs
+// /capture/clear endpoint
 func handlerCaptureClear(c *gin.Context) {
 	store.Clear()
 
@@ -81,4 +83,31 @@ func handlerCaptureClear(c *gin.Context) {
 		gin.H{
 			"stat": store.Stat(),
 		}))
+}
+
+// handlerCaptureAll get all not deleted stuffs
+// /capture/all
+func handlerCaptureAll(c *gin.Context) {
+	fStr := c.Param("filter")
+	fStr = strings.Trim(fStr, "/ ")
+
+	f, ok := store.Filter[fStr]
+	if !ok {
+		c.JSON(http.StatusBadRequest, NewResponse(fmt.Sprintf("filter %s not found", fStr), nil))
+		return
+	}
+
+	stuffs := store.All(f)
+
+	if len(stuffs) == 0 {
+		c.JSON(http.StatusNotFound, NewResponse("These is no stuff", gin.H{
+			"stat": store.Stat(),
+		}))
+		return
+	}
+
+	c.JSON(http.StatusOK, NewResponse("Get all stuffs not deleted success", gin.H{
+		"stuffs": stuffs,
+		"stat":   store.Stat(),
+	}))
 }
