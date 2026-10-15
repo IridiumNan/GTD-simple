@@ -2,10 +2,13 @@ package store
 
 import (
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
+	"github.com/IridiumNan/GTD-simple/internal/capture/config"
 	"github.com/IridiumNan/GTD-simple/internal/models"
+	"github.com/spf13/viper"
 )
 
 // ds is default store obj
@@ -13,7 +16,23 @@ import (
 var ds models.Store
 
 func init() {
-	df := filepath.Join(models.StoreDir, models.StoreJSONFile)
+	// NOTE: Must call the config module load function first
+	err := config.LoadConfig()
+	if err != nil {
+		slog.Error("while loading configuraion", "err", err)
+	}
+
+	dir := viper.GetString("store.dir")
+	if dir == models.NonePath {
+		slog.Warn("failed to get store dir from configuration, use default one")
+		dir = models.StoreDir
+	}
+	file := viper.GetString("store.file")
+	if file == "" {
+		slog.Warn("failed to get store file name from configuration, use default one")
+		dir = models.StoreJSONFile
+	}
+	df := filepath.Join(dir, file)
 	// ensure data dir
 	if err := os.MkdirAll(models.StoreDir, 0o755); err != nil {
 		log.Fatalf("error while making dir for json store, dir: %s, err: %s", models.StoreDir, err.Error())

@@ -7,7 +7,9 @@ import (
 	"log"
 
 	"github.com/IridiumNan/GTD-simple/cmd/web"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // serveCmd represents the serve command
@@ -20,14 +22,29 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		r := web.Router()
+	Run: runServe,
+}
 
-		err := r.Run(":8080")
+func runServe(cmd *cobra.Command, args []string) {
+	go func() {
+		backAdrr := viper.GetString("service.backend.addr")
+		br := web.BackRouter()
+		err := br.Run(backAdrr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("error while running backend router, err: %s", err.Error())
 		}
-	},
+	}()
+
+	frontAddr := viper.GetString("service.front.addr")
+	fr := gin.Default()
+	frontRoot := viper.GetString("service.front/dir")
+
+	fr.Static("/", frontRoot)
+
+	err := fr.Run(frontAddr)
+	if err != nil {
+		log.Fatalf("error while serving front end static file, root: %s, addr: %s, err: %s", frontRoot, frontAddr, err.Error())
+	}
 }
 
 func init() {

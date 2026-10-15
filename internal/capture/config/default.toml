@@ -1,0 +1,11 @@
+[service.front]
+# dir is the default front-end file path
+dir = "./front"
+addr = "127.0.0.1:8000"
+
+[service.backend]
+addr = "127.0.0.1:8080"
+
+[store]
+dir = "store"
+file = "data.json"
