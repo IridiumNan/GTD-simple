@@ -52,6 +52,31 @@ func handlerCaptureDelete(c *gin.Context) {
 		}))
 }
 
+func handlerCaptureUpdate(c *gin.Context) {
+	var reqJSON RequestCapture
+
+	if err := c.ShouldBindJSON(&reqJSON); err != nil {
+		c.JSON(http.StatusBadRequest, NewResponse("json struct error", nil))
+		return
+	}
+	var ns *models.Stuff
+	if reqJSON.Data.S.ID == "" {
+		ns = models.NewStuff(reqJSON.Data.S.Raw)
+	} else {
+		// use the request structure
+		ns = &reqJSON.Data.S
+	}
+
+	store.Create(ns)
+
+	c.JSON(http.StatusCreated, NewResponse(
+		fmt.Sprintf("stuff has been updated, id: %s, content: %s", ns.ID, ns.Raw),
+		gin.H{
+			"id":   ns.ID,
+			"stat": store.Stat(),
+		}))
+}
+
 // handlerCaptureFetch fetch a stuff by id
 // /capture/delete/:id get id from endpoint
 func handlerCaptureFetch(c *gin.Context) {

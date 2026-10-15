@@ -11,7 +11,8 @@ func BackRouter() *gin.Engine {
 	r.POST("/capture/create", handlerCaptureCreate)
 
 	r.DELETE("/capture/delete/:id", handlerCaptureDelete)
-	// TODO: write a recovery endpoint for soft-deleted stuffs
+
+	r.POST("/capture/update", handlerCaptureUpdate)
 
 	r.GET("/capture/fetch/:id", handlerCaptureFetch)
 

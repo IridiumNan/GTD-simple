@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 
 	"github.com/IridiumNan/GTD-simple/internal/models"
 	"github.com/IridiumNan/GTD-simple/internal/utils"
@@ -44,6 +43,7 @@ func (js *JSONStore) markWrite() {
 
 // Create is the implement for [models.Store.Create]
 // it just add new stuff to map
+// Overwrite the old one
 func (js *JSONStore) Create(s *models.Stuff) {
 	js.stuffs[s.ID] = s
 	js.markWrite()
@@ -75,6 +75,7 @@ func (js *JSONStore) Fetch(id string) *models.Stuff {
 // every time this function is called, all data will be Flushed into json file
 func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
 	if !js.flushed {
+		slog.Debug("All: content not flushed yet, try to flush", "file", js.fp)
 		err := js.Flush()
 		if err != nil {
 			slog.Error("error while flushing data into json file before list all", "err", err)
@@ -114,17 +115,12 @@ func (js *JSONStore) Flush() error {
 		return fmt.Errorf("error while marshal stuffs into byte data, err: %s", err.Error())
 	}
 
-	dir := filepath.Dir(js.fp)
-	err = os.MkdirAll(dir, 0o755)
-	if err != nil {
-		return fmt.Errorf("error while creaing dir for json data file, err: %s", err.Error())
-	}
-
-	err = os.WriteFile(js.fp, data, 0o644)
+	err = utils.EnsureWrite(data, js.fp)
 	if err != nil {
 		return fmt.Errorf("error while writing json byte data into json file, file: %s, err: %s", js.fp, err.Error())
 	}
 
+	slog.Debug("Flush: begin flushing data into json file success", "file", js.fp)
 	js.flushed = true
 
 	return nil
@@ -136,6 +132,8 @@ func (js *JSONStore) Stat() *models.StuffStat {
 	if !js.change && js.stat != nil {
 		return js.stat
 	}
+
+	slog.Debug("Stat: stat should be update, reconstruct now")
 
 	s := utils.MapV(js.stuffs)
 	data, err := json.Marshal(s)

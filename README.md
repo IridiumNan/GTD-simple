@@ -19,3 +19,11 @@ It use html, js, golang
 > [!NOTE]
 > It just a minimal system without polish
 > for personal use
+
+---
+
+## Develop
+
+API document: [`/docs/capture_api.md`](/docs/capture_api.md)
+
+API curl script: [`/scripts/request.sh`](./scripts/request.sh)

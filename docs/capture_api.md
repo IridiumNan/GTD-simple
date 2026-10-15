@@ -220,3 +220,24 @@ Response
     "data": null
 }
 ```
+
+---
+
+- `/capture/update` POST
+
+Request
+
+```json
+{
+    "data": {
+        "stuff": {
+            "id": "original id",
+            "raw": "This is recovered stuff",
+            "is_del": false
+        }
+    }
+}
+```
+
+> [!WARNING]
+> Honestly, this endpoint equals to `/capture/create` now

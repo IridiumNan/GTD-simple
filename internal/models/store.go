@@ -2,6 +2,9 @@ package models
 
 type Store interface {
 	// Create New [Stuff]
+	// If this stuff id has been exist
+	// it will overwrite the old one
+	// so that you can update stuff with this function
 	Create(s *Stuff)
 
 	// Delete stuff by id
@@ -18,7 +21,7 @@ type Store interface {
 	// if f(s) == false, this stuff will be dropped
 	All(f func(s *Stuff) bool) []*Stuff
 
-	// Clear all stuffs that have been marked as deleted
+	// Clear all stuffs that have been soft-deleted
 	Clear()
 
 	// Stat return current stuffs status

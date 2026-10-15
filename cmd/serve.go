@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"log"
+	"log/slog"
 
 	"github.com/IridiumNan/GTD-simple/cmd/web"
 	"github.com/gin-gonic/gin"
@@ -15,17 +16,15 @@ import (
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Start the backend serve",
+	Long: `It will start a backend serve for GTD-simple
+	if configuration file not found, it will create a new one.
+	default configuration path is ./config.toml`,
 	Run: runServe,
 }
 
 func runServe(cmd *cobra.Command, args []string) {
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 	go func() {
 		backAdrr := viper.GetString("service.backend.addr")
 		br := web.BackRouter()
@@ -37,7 +36,7 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	frontAddr := viper.GetString("service.front.addr")
 	fr := gin.Default()
-	frontRoot := viper.GetString("service.front/dir")
+	frontRoot := viper.GetString("service.front.dir")
 
 	fr.Static("/", frontRoot)
 
