@@ -21,6 +21,11 @@ func init() {
 	ds = NewJSONStore(df)
 }
 
+// Reload reload the data from another file
+func Reload(file string) {
+	ds = NewJSONStore(file)
+}
+
 // Create call default json store Create function
 func Create(s *models.Stuff) {
 	ds.Create(s)
@@ -52,6 +57,7 @@ func Clear() {
 	ds.Clear()
 }
 
+// Stat call default json store Stat function
 func Stat() *models.StuffStat {
 	return ds.Stat()
 }

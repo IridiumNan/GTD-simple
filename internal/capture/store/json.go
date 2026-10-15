@@ -22,12 +22,31 @@ type JSONStore struct {
 
 	// fp is the store file path
 	fp string
+
+	// flushed mark if current data on RAM has been flushed on file
+	// if false, [Flush] should be called when read data
+	flushed bool
+
+	// change mark if stat change
+	// it just consider the stat cache
+	change bool
+
+	// cache stat
+	stat *models.StuffStat
+}
+
+// markWrite update [JSONStore.change] and [JSONStore.flushed] as data updated
+// call it when any write action happend on data
+func (js *JSONStore) markWrite() {
+	js.change = true
+	js.flushed = false
 }
 
 // Create is the implement for [models.Store.Create]
 // it just add new stuff to map
 func (js *JSONStore) Create(s *models.Stuff) {
 	js.stuffs[s.ID] = s
+	js.markWrite()
 }
 
 // Delete is the implement for [models.Store.Delete]
@@ -38,6 +57,7 @@ func (js *JSONStore) Delete(id string) bool {
 	}
 
 	js.stuffs[id].IsDel = true
+	js.markWrite()
 	return true
 }
 
@@ -54,9 +74,11 @@ func (js *JSONStore) Fetch(id string) *models.Stuff {
 // All is the implement for [models.Store.All]
 // every time this function is called, all data will be Flushed into json file
 func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
-	err := js.Flush()
-	if err != nil {
-		slog.Error("error while flushing data into json file before list all", "err", err)
+	if !js.flushed {
+		err := js.Flush()
+		if err != nil {
+			slog.Error("error while flushing data into json file before list all", "err", err)
+		}
 	}
 
 	if f == nil {
@@ -79,6 +101,7 @@ func (js *JSONStore) Clear() {
 	for id, s := range js.stuffs {
 		if s.IsDel {
 			delete(js.stuffs, id)
+			js.markWrite()
 		}
 	}
 }
@@ -102,21 +125,33 @@ func (js *JSONStore) Flush() error {
 		return fmt.Errorf("error while writing json byte data into json file, file: %s, err: %s", js.fp, err.Error())
 	}
 
+	js.flushed = true
+
 	return nil
 }
 
 // Stat is implement for [models.Store.Stat]
 func (js *JSONStore) Stat() *models.StuffStat {
+	// return cached stat
+	if !js.change && js.stat != nil {
+		return js.stat
+	}
+
 	s := utils.MapV(js.stuffs)
 	data, err := json.Marshal(s)
 	if err != nil {
 		return nil
 	}
 
-	return &models.StuffStat{
+	// update stat, so there is no change since current time
+	js.change = false
+
+	js.stat = &models.StuffStat{
 		Size:  int64(len(data)),
 		Count: len(js.stuffs),
 	}
+
+	return js.stat
 }
 
 // NewJSONStore creating a new json store with given file path
@@ -127,8 +162,11 @@ func NewJSONStore(file string) *JSONStore {
 		return js
 	}
 	return &JSONStore{
-		stuffs: make(map[string]*models.Stuff, 10),
-		fp:     file,
+		stuffs:  make(map[string]*models.Stuff, 10),
+		fp:      file,
+		flushed: true,
+		change:  false,
+		stat:    nil,
 	}
 }
 
@@ -148,8 +186,11 @@ func loadFromJSON(file string) *JSONStore {
 	}
 
 	return &JSONStore{
-		stuffs: buildStuffMap(jd.Stuffs),
-		fp:     file,
+		stuffs:  buildStuffMap(jd.Stuffs),
+		fp:      file,
+		flushed: true,
+		change:  false,
+		stat:    nil,
 	}
 }
 
