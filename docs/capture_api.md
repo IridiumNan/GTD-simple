@@ -78,6 +78,41 @@ In not found case
 
 ---
 
+- `/capture/multiDel` DELETE
+
+Request
+
+```json
+{
+    "data": {
+        "id_list": [
+            "idfjfiajsdfoiahf",
+            "idijfaodifjlfjdf"
+        ]
+    }
+}
+```
+
+Response
+
+```json
+{
+    "msg": "all stuffs has been marked as deleted, hard deleted them by clear",
+    "data": {
+        "not_found": [
+
+            "idfjfiajsdfoiahf"
+        ],
+        "stat": {
+            "count": 3,
+            "size": 132
+        }
+    }
+}
+```
+
+---
+
 - `/capture/fetch/{id}` GET
 
 Request not contains JSON
@@ -184,6 +219,7 @@ Response
 {
     "msg": "There is no stuff",
     "data": {
+        "stuffs": null,
         "stat": {
             "count": 2,
             "size": 123

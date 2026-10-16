@@ -16,6 +16,9 @@ import (
 var ds models.Store
 
 func init() {
+	// set level debug
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	// NOTE: Must call the config module load function first
 	err := config.LoadConfig()
 	if err != nil {
@@ -34,9 +37,11 @@ func init() {
 	}
 	df := filepath.Join(dir, file)
 	// ensure data dir
-	if err := os.MkdirAll(models.StoreDir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		log.Fatalf("error while making dir for json store, dir: %s, err: %s", models.StoreDir, err.Error())
 	}
+
+	slog.Debug("try to load stuff data from disk", "file", df)
 	ds = NewJSONStore(df)
 }
 

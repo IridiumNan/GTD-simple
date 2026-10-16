@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// handlerCaptureCreate creating a new stuff
 func handlerCaptureCreate(c *gin.Context) {
 	var reqJSON RequestCapture
 
@@ -52,9 +54,37 @@ func handlerCaptureDelete(c *gin.Context) {
 		}))
 }
 
+func handlerCaptureMultiDel(c *gin.Context) {
+	type idList struct {
+		List []string `json:"id_list"`
+	}
+	type multiDelBody struct {
+		Data idList `json:'data`
+	}
+
+	var reqJSON multiDelBody
+	if err := c.ShouldBindJSON(&reqJSON); err != nil {
+		c.JSON(http.StatusBadRequest, NewResponse("json stuct unmarshal error ", nil))
+		return
+	}
+
+	notFound := make([]string, 0, len(reqJSON.Data.List))
+	for _, id := range reqJSON.Data.List {
+		exist := store.Delete(id)
+		if !exist {
+			slog.Warn("soft deleted for not exist stuff", "id", id)
+			notFound = append(notFound, id)
+		}
+	}
+
+	c.JSON(http.StatusOK, NewResponse("all stuffs has been marked as deleted", gin.H{
+		"not_found": notFound,
+		"stat":      store.Stat(),
+	}))
+}
+
 func handlerCaptureUpdate(c *gin.Context) {
 	var reqJSON RequestCapture
-
 	if err := c.ShouldBindJSON(&reqJSON); err != nil {
 		c.JSON(http.StatusBadRequest, NewResponse("json struct error", nil))
 		return
@@ -126,7 +156,8 @@ func handlerCaptureAll(c *gin.Context) {
 
 	if len(stuffs) == 0 {
 		c.JSON(http.StatusNotFound, NewResponse("These is no stuff", gin.H{
-			"stat": store.Stat(),
+			"stuffs": nil,
+			"stat":   store.Stat(),
 		}))
 		return
 	}
@@ -137,6 +168,7 @@ func handlerCaptureAll(c *gin.Context) {
 	}))
 }
 
+// handlerCaptureFlush flush current data on ram into disk
 func handlerCaptureFlush(c *gin.Context) {
 	err := store.Flush()
 	if err != nil {

@@ -1,0 +1,18 @@
+jobs:
+  deploy:
+    runs-on: fedora-host
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Build and Restart
+        run: |
+          echo "Starting build"
+          go build -o gtd-cli .
+          mv gtd-cli /home/cai/
+          echo "moving gtd-cli to /home/cai/"

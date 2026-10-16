@@ -74,12 +74,9 @@ func (js *JSONStore) Fetch(id string) *models.Stuff {
 // All is the implement for [models.Store.All]
 // every time this function is called, all data will be Flushed into json file
 func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
-	if !js.flushed {
-		slog.Debug("All: content not flushed yet, try to flush", "file", js.fp)
-		err := js.Flush()
-		if err != nil {
-			slog.Error("error while flushing data into json file before list all", "err", err)
-		}
+	err := js.Flush()
+	if err != nil {
+		slog.Error("error while flushing data into json file before list all", "err", err)
 	}
 
 	if f == nil {
@@ -109,6 +106,13 @@ func (js *JSONStore) Clear() {
 
 // Flush is a implement for [models.Store.Flush]
 func (js *JSONStore) Flush() error {
+	if js.flushed {
+		slog.Debug("all data is updated, skip flush request")
+		return nil
+	}
+
+	slog.Debug("there are something new need to be updated, try to flush", "file", js.fp)
+
 	jd := JSONData{Stuffs: utils.MapV(js.stuffs)}
 	data, err := json.Marshal(jd)
 	if err != nil {
@@ -159,6 +163,8 @@ func NewJSONStore(file string) *JSONStore {
 	if js != nil {
 		return js
 	}
+
+	slog.Info("load from disk failed, creating a new store", "file", file)
 	return &JSONStore{
 		stuffs:  make(map[string]*models.Stuff, 10),
 		fp:      file,
@@ -182,6 +188,8 @@ func loadFromJSON(file string) *JSONStore {
 		slog.Error("error while unmarshal json data from file", "err", err)
 		return nil
 	}
+
+	slog.Debug("load stuffs from disk success", "file", file, "size", len(data))
 
 	return &JSONStore{
 		stuffs:  buildStuffMap(jd.Stuffs),
