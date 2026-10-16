@@ -1,3 +1,9 @@
+name: Deploy GTD-simple APP
+
+on:
+  push:
+    branches: [ "main" ]
+
 jobs:
   deploy:
     runs-on: fedora-host
