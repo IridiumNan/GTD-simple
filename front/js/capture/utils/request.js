@@ -1,10 +1,12 @@
 import * as URL from "./url.js"
-// const captureURL = "http://localhost:8080/capture/"
 
-// NOTE:
-// For IridiumNan
-// uncomment this when deploy 
 const captureURL = "http://100.120.81.67:8080/capture/"
+if (Mode == ModeDeploy) {
+    captureURL = "http://100.120.81.67:8080/capture/"
+}
+if (Mode == ModeDevelop) {
+    captureURL = "http://localhost:8080/capture/"
+}
 
 // captureCreate return the created stuff id
 export async function captureCreate(raw) {
