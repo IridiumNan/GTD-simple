@@ -1,2 +1,2 @@
-const ModeDevelop = "Dev"
-const ModeDeploy = "Dep"
+const ModeDevelop = "dev"
+const ModeDeploy = "dep"

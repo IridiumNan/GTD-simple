@@ -16,12 +16,15 @@ jobs:
         with:
           go-version-file: "go.mod"
 
+      - name: Prepare Front
+        run: ./pack-front.sh
+
       - name: Build and Restart
         run: |
           echo "Starting build"
           go build -o gtd-cli .
           systemctl stop gtd-simple
-          cp gtd-cli /opt/gtd-simple/
+          mv gtd-cli /opt/gtd-simple/
           cd /opt/gtd-simple
           ./gtd-cli init
           systemctl start gtd-simple
