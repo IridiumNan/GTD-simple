@@ -3,7 +3,6 @@ const captureURL = "http://localhost:8080/capture/"
 // captureCreate return the created stuff id
 async function captureCreate(raw) {
     let url = captureURL + "create"
-
     const bodyData = {
         data: {
             stuff: {

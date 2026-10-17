@@ -19,6 +19,4 @@ jobs:
       - name: Build and Restart
         run: |
           echo "Starting build"
-          go build -o gtd-cli .
-          mv gtd-cli /home/cai/
-          echo "moving gtd-cli to /home/cai/"
+          pwd

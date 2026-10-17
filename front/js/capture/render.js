@@ -1,39 +1,42 @@
-import * as global from "./global.js"
-import { sizeToStr } from "./size_utils.js";
+import { sizeToStr } from "./utils/size.js"
 
-const $input = document.getElementById('input');
-const $list = document.getElementById('list');
+const $input = document.getElementById("input")
+const $list = document.getElementById("list")
 const $stat = document.getElementById("stat")
 
-function renderStat() {
-    console.log(`stat on render function: ${JSON.stringify(global.stat)}`)
-    let itext = `stuff count: ${global.stat.count}, storage: ${sizeToStr(global.stat.size)}`
+export function renderStat(stat) {
+    let itext = `stuff count: ${stat.count}, storage: ${sizeToStr(stat.size)}`
     $stat.innerText = itext
 }
 
-function renderStuff() {
-    $list.innerHTML = '';
-    global.stuffs.forEach((id, stf) => {
-        if (stf.is_del) return
-        const li = document.createElement('li');
-        const span = document.createElement('span');
-        span.textContent = stf.raw;
+export function renderStuff(stuffs, actions) {
+    $list.innerText = ''
+    stuffs.forEach((id, stf) => {
+        if (stf.is_del) {
+            return
+        }
 
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = '×';
-        btn.title = 'delete';
-        btn.onclick = () => { stf.is_del = true; delArr.push(id); render(); };
+        const li = document.createElement("li")
+        const span = document.createElement("span")
+        span.textContent = stf.raw
 
-        li.append(span, btn);
-        global.$list.append(li);
+        let delBtn = document.createElement("button")
+        delBtn.type = "button"
+        delBtn.textContent = "x"
+        delBtn.title = "delete"
+
+        delBtn.onclick = () => {
+            console.log("delete button clicked")
+            actions.delete(stf, id)
+        }
+
+        li.append(span, delBtn)
+        $list.append(li)
     })
-
 }
 
-function render() {
-    renderStat()
-    renderStuff()
-}
 
-export { render }
+export function render(state, actions) {
+    renderStat(state.stat)
+    renderStuff(state.stuffs, actions)
+}
