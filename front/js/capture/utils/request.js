@@ -3,7 +3,7 @@ import { Mode } from "../config/config.js"
 import { ModeDeploy, ModeDevelop } from "../config/define.js"
 
 
-const captureURL = "http://100.120.81.67:8080/capture/"
+let captureURL = ""
 if (Mode == ModeDeploy) {
     captureURL = "http://100.120.81.67:8080/capture/"
 }
