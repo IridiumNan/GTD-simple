@@ -1,8 +1,14 @@
-const captureURL = "http://localhost:8080/capture/"
+import * as URL from "./url.js"
+// const captureURL = "http://localhost:8080/capture/"
+
+// NOTE:
+// For IridiumNan
+// uncomment this when deploy 
+const captureURL = "http://100.120.81.67:8080/capture/"
 
 // captureCreate return the created stuff id
-async function captureCreate(raw) {
-    let url = captureURL + "create"
+export async function captureCreate(raw) {
+    let url = URL.Join(captureURL, "create")
     const bodyData = {
         data: {
             stuff: {
@@ -31,26 +37,30 @@ async function captureCreate(raw) {
     }
 
 
-    return json.data.id, json.data.stat
+    return [json.data.id, json.data.stat]
 
 }
 
-async function captureAll() {
-    let url = captureURL + "all" + "/" + "default"
+export async function captureAll() {
+    let url = URL.Join(captureURL, "all", "default")
 
     console.log(`Request: target url: ${url}`)
     const resp = await fetch(url)
 
     const json = await resp.json()
-    console.log(`status: ${resp.status}`)
-    console.log(`stuffs: ${JSON.stringify(json.data.stuffs)}`)
+    console.log(`status for capture all: ${resp.status}`)
+    console.log(json.msg)
+
+    console.log(json.data.stat)
+
+    console.log(JSON.stringify(json.data))
 
     return [json.data.stuffs, json.data.stat]
 
 }
 
-async function commitDel(idArr) {
-    let url = captureURL + "multiDel"
+export async function captureDel(idArr) {
+    let url = URL.Join(captureURL, "multiDel")
 
     const bodyData = {
         data: {
@@ -68,7 +78,7 @@ async function commitDel(idArr) {
 
     const json = await resp.json()
 
-    console.log(`status: ${resp.status}`)
+    console.log(`status for capture multi delete: ${resp.status}`)
     console.log(json.msg)
     console.log(json.data.stat)
 
@@ -76,6 +86,18 @@ async function commitDel(idArr) {
 }
 
 
-export { captureCreate, captureAll, commitDel }
+// captureClear return the latest stat
+export async function captureClear() {
+    let url = URL.Join(captureURL, "clear")
 
+    const resp = await fetch(url, {
+        method: "DELETE",
+    })
 
+    const json = await resp.json()
+
+    console.log(`status for capture clear ${resp.status}`)
+    console.log(json.msg)
+
+    return json.data.stat
+}

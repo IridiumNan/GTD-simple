@@ -12,7 +12,9 @@ func BackRouter() *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:8000"},
+		// AllowOrigins: []string{"http://localhost:8000"},
+
+		AllowOrigins: []string{"*"},
 
 		AllowMethods: []string{
 			"GET", "POST", "DELETE", "OPTIONS",
