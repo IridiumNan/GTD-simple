@@ -1,1 +1,1 @@
-export const Mode = "dep"
+export const Mode = "dev"

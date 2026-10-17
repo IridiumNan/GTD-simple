@@ -16,12 +16,14 @@ jobs:
         with:
           go-version-file: "go.mod"
 
-      - name: Prepare Front
-        run: ./pack-front.sh
-
-      - name: Build and Restart
+      - name: prepare
         run: |
-          echo "Starting build"
+          sed -i 's/dev/dep/g' ./front/js/capture/config/config.js
+          cat ./front/js/capture/config/config.js
+          tar -cJf ./internal/utils/front.tar.xz ./front
+
+      - name: Build then Deploy
+        run: |
           go build -o gtd-cli .
           systemctl stop gtd-simple
           mv gtd-cli /opt/gtd-simple/
