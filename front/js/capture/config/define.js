@@ -1,2 +1,2 @@
-const ModeDevelop = "dev"
-const ModeDeploy = "dep"
+export const ModeDevelop = "dev"
+export const ModeDeploy = "dep"

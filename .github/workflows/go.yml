@@ -20,6 +20,11 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version-file: "go.mod"
+    - name: Prepare front
+      run: |
+        sed -i 's/dev/dep/g' ./front/js/capture/config/config.js
+        cat ./front/js/capture/config/config.js
+        tar -cJf ./internal/utils/front.tar.xz ./front
 
     - name: Build
       run: go build -v ./...
