@@ -1,4 +1,4 @@
-import { initStore, getState, deleteStuff, createStuff, deleteCommit, clearDelStuff } from "./store.js";
+import { initStore, getState, deleteStuff, createStuff, deleteCommit, clearDelStuff, recoverStuff } from "./store.js";
 import { mountText, mountList } from "./utils/dom.js";
 import { createStuffNode } from "./componets.js";
 import { sizeToStr } from "./utils/size.js";
@@ -19,16 +19,20 @@ const updateView = () => {
         delete: (targetStf, targetId) => {
             deleteStuff(targetStf, targetId)
             updateView()
+        },
+        recover: (targetStf) => {
+            recoverStuff(targetStf)
+            updateView()
         }
     }
 
     const stuffNodes = []
     state.stuffs.forEach((id, stf) => {
-        if (stf.is_del) {
-            console.log(`this stuff have been deleted, skip it, id: ${id}`)
-            return
-        }
         const node = createStuffNode(stf, id, actions)
+        if (stf.is_del) {
+
+            node.style.opacity = '0.3'
+        }
         stuffNodes.push(node)
     })
 
@@ -52,6 +56,7 @@ $commit.addEventListener('click', async (e) => {
 
     let msg = await deleteCommit()
     console.log(msg)
+    updateView()
 })
 
 $clear.addEventListener("click", async (e) => {

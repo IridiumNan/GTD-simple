@@ -17,7 +17,6 @@ export function getState() {
 
 export async function initStore() {
     const [stuffArr, stat] = await captureAll();
-    // console.log(`stat on init function ${stat}`)
     console.log(`stat on init function: ${JSON.stringify(stat)}`)
     console.log(`stuffArr: ${JSON.stringify(stuffArr)}`)
 
@@ -50,6 +49,11 @@ export async function deleteCommit() {
 
     clearDelArr()
 
+    state.stuffs.clear()
+    await initStore()
+
+    console.log(state.stuffs)
+
     return `delete stuffs commited`
 }
 
@@ -74,4 +78,20 @@ export async function createStuff(raw) {
 
 export async function clearDelStuff() {
     state.stat = await captureClear()
+}
+
+export async function recoverStuff(stf, id) {
+    if (stf.is_del == false) return;
+    stf.is_del = false
+
+    let newDelArr = []
+    for (let i = 0; i < state.delArr.length; i++) {
+        if (state.delArr[i] == id) {
+            console.log(`removing the id ${id} from delArr`)
+            continue
+        }
+        newDelArr.push(state.delArr[i])
+    }
+
+    state.delArr = newDelArr
 }
