@@ -17,8 +17,6 @@ export function getState() {
 
 export async function initStore() {
     const [stuffArr, stat] = await captureAll();
-    console.log(`stat on init function: ${JSON.stringify(stat)}`)
-    console.log(`stuffArr: ${JSON.stringify(stuffArr)}`)
 
     if (stat) {
         state.stat = stat;

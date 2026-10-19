@@ -6,7 +6,8 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>GTD Simple</title>
 		<link rel="stylesheet" type="text/css" href="style/capture.css">
-		<link rel="stylesheet" href="style/iconfont/font_w68wjayibp/iconfont.css">
+		<link rel="stylesheet" type="text/css" href="style/button/capture.css">
+		<link rel="stylesheet" href="style/iconfont/font_d5dp0rq4rd4/iconfont.css">
 	</head>
 
 	<body>
@@ -15,16 +16,26 @@
 			<h1>Capture Box</h1>
 
 			<form id="form">
-				<input id="input" type="text" name="stuff" placeholder="Just write down" autocomplete="off" autofocus>
+				<input id="input" type="text" name="stuff" placeholder="Capture your thoughts" autocomplete="off" autofocus>
 			</form>
 
 			<ul id="list"></ul>
-			<!-- <p id="empty">there is no any stuff</p> -->
-			<button type="button" id="commit">commit delete</button>
-			<br>
-			<button type="button" id="clear">clear deleted stuffs</button>
-			<br>
-			<p id="stat"></p>
+			<div class="dock">
+				<div class="actions" role="group" aria-label="batch actions">
+					<button type="button" id="commit" class="btn btn-primary">
+						<span class="iconfont icon-commit" aria-hidden="true"></span>
+						Commit delete
+					</button>
+					<button type="button" id="clear" class="btn btn-ghost">
+						<span class="iconfont icon-shanchu" aria-hidden="true"></span>
+						Clear deleted
+					</button>
+				</div>
+				<p class="status" aria-live="polite">
+					<span class="iconfont icon-storage" aria-hidden="true"></span>
+					<span id="stat"></span>
+				</p>
+			</div>
 			<script src="./js/capture/main.js" type="module">
 			</script>
 		</main>

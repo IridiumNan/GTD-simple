@@ -48,7 +48,6 @@ const updateView = () => {
         stuffNodes.push(node)
     })
 
-    console.log(`the length of structure stuff nodes: ${stuffNodes.length}`)
     mountList('list', stuffNodes)
 }
 
@@ -65,6 +64,11 @@ $form.addEventListener('submit', async (e) => {
 
 $commit.addEventListener('click', async (e) => {
     e.preventDefault()
+
+    if (state.delArr.length == 0) {
+        console.log("there is no deleted stuff to be commited, skip this request")
+        return;
+    }
 
     let msg = await deleteCommit()
     console.log(msg)

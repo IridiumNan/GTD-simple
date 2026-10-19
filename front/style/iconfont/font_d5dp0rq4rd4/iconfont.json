@@ -20,6 +20,20 @@
       "unicode_decimal": 59034
     },
     {
+      "icon_id": "490681",
+      "name": "storage",
+      "font_class": "storage",
+      "unicode": "ed39",
+      "unicode_decimal": 60729
+    },
+    {
+      "icon_id": "7712637",
+      "name": "commit",
+      "font_class": "commit",
+      "unicode": "e725",
+      "unicode_decimal": 59173
+    },
+    {
       "icon_id": "11372693",
       "name": "删除",
       "font_class": "shanchu",

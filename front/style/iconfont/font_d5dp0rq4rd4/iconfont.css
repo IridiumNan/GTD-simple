@@ -1,6 +1,6 @@
 @font-face {
   font-family: "iconfont"; /* Project id  */
-  src: url('iconfont.ttf?t=1792392607904') format('truetype');
+  src: url('iconfont.ttf?t=1792397307745') format('truetype');
 }
 
 .iconfont {
@@ -17,6 +17,14 @@
 
 .icon-huifu:before {
   content: "\e69a";
+}
+
+.icon-storage:before {
+  content: "\ed39";
+}
+
+.icon-commit:before {
+  content: "\e725";
 }
 
 .icon-shanchu:before {
