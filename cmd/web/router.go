@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func setfrontFS() fs.FS {
+func buildfrontFS() fs.FS {
 	if devDir := viper.GetString("service.front.dir"); devDir != "" {
 		// for develop mode, read the dir directly, no need to rebuild this cli
 		slog.Info("using the front dir directly (Only do this for development)", "path", devDir)
@@ -24,10 +24,8 @@ func setfrontFS() fs.FS {
 	return front.FS
 }
 
-var frontFS fs.FS
-
 func Router() *gin.Engine {
-	frontFS = setfrontFS()
+	frontFS := buildfrontFS()
 	r := gin.Default()
 	// register backend endpoints
 	r.POST("/capture/create", handlerCaptureCreate)
@@ -45,6 +43,8 @@ func Router() *gin.Engine {
 
 	r.POST("/capture/flush", handlerCaptureFlush)
 
+	frontServe := gin.WrapH(http.FileServerFS(frontFS))
+
 	// static files
 	r.NoRoute(func(c *gin.Context) {
 		if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
@@ -52,7 +52,7 @@ func Router() *gin.Engine {
 			return
 		}
 
-		http.FileServer(http.FS(frontFS)).ServeHTTP(c.Writer, c.Request)
+		frontServe(c)
 	})
 
 	return r
