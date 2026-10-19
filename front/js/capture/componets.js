@@ -5,6 +5,7 @@ export function createStuffNode(stf, id, actions) {
     const span = document.createElement("span")
     span.textContent = stf.raw
 
+    // recover button
     let btn = document.createElement("button")
     btn.type = 'button'
     btn.className = "recoverBtn"
@@ -15,6 +16,21 @@ export function createStuffNode(stf, id, actions) {
     }
     li.append(span, btn)
 
+
+    // update button
+    // this button fill the input box with stuff raw then delete this stuff on server
+
+    btn = document.createElement("button")
+    btn.type = "button"
+    btn.textContent = 'e'
+    btn.className = "updateBtn"
+    btn.onclick = () => {
+        console.log("updating button is pressed")
+        actions.update(stf, id)
+    }
+    li.append(btn)
+
+    // soft-delete button
     btn = document.createElement('button')
     btn.type = 'button'
     btn.textContent = 'x'
@@ -24,8 +40,7 @@ export function createStuffNode(stf, id, actions) {
         actions.delete(stf, id)
     }
 
-    li.append(span, btn)
-
+    li.append(btn)
 
 
     return li

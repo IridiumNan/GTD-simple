@@ -1,4 +1,4 @@
-import { captureAll, captureClear, captureCreate, captureDel } from "./utils/request.js";
+import { captureAll, captureClear, captureCreate, captureDel, captureMultiDel } from "./utils/request.js";
 import { newStuff, setId } from "./model/stuff.js";
 
 // private state
@@ -45,7 +45,7 @@ export async function deleteCommit() {
     if (!state.delArr || state.delArr.length == 0) {
         return `there is no stuff on del arrary, skip this commit`
     }
-    state.stat = await captureDel(state.delArr)
+    state.stat = await captureMultiDel(state.delArr)
 
     clearDelArr()
 
@@ -94,4 +94,11 @@ export async function recoverStuff(stf, id) {
     }
 
     state.delArr = newDelArr
+}
+
+export async function updateStuff(stf, id) {
+    state.stuffs.delete(stf)
+    state.stat = await captureDel(id)
+
+    console.log(`deleting stuff on server, id: ${id}`)
 }

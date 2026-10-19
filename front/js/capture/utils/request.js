@@ -64,7 +64,7 @@ export async function captureAll() {
 
 }
 
-export async function captureDel(idArr) {
+export async function captureMultiDel(idArr) {
     let url = URL.Join(captureURL, "multiDel")
 
     const bodyData = {
@@ -86,6 +86,18 @@ export async function captureDel(idArr) {
     console.log(`status for capture multi delete: ${resp.status}`)
     console.log(json.msg)
     console.log(json.data.stat)
+
+    return json.data.stat
+}
+
+export async function captureDel(id) {
+    let url = URL.Join(captureURL, "delete", id)
+
+    const resp = await fetch(url, {
+        method: "DELETE"
+    })
+
+    const json = await resp.json()
 
     return json.data.stat
 }

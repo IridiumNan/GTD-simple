@@ -1,4 +1,4 @@
-import { initStore, getState, deleteStuff, createStuff, deleteCommit, clearDelStuff, recoverStuff } from "./store.js";
+import { initStore, getState, deleteStuff, createStuff, deleteCommit, clearDelStuff, recoverStuff, updateStuff } from "./store.js";
 import { mountText, mountList } from "./utils/dom.js";
 import { createStuffNode } from "./componets.js";
 import { sizeToStr } from "./utils/size.js";
@@ -22,6 +22,17 @@ const updateView = () => {
         },
         recover: (targetStf) => {
             recoverStuff(targetStf)
+            updateView()
+        },
+        update: (stf, id) => {
+            if ($input.innerText) {
+                alert("please commit current content on input box")
+                return;
+            }
+
+            $input.value = stf.raw
+            updateStuff(stf, id)
+
             updateView()
         }
     }
@@ -65,8 +76,6 @@ $clear.addEventListener("click", async (e) => {
     await clearDelStuff()
     updateView()
 })
-
-// TODO: Write an export button
 
 
 async function bootstrap() {
