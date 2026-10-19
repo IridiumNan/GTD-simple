@@ -16,6 +16,7 @@ const updateView = () => {
 
 
     const actions = {
+        // this action just soft-delete locally
         delete: (targetStf, targetId) => {
             deleteStuff(targetStf, targetId)
             updateView()
@@ -25,7 +26,7 @@ const updateView = () => {
             updateView()
         },
         update: (stf, id) => {
-            if ($input.innerText) {
+            if ($input.value) {
                 alert("please commit current content on input box")
                 return;
             }

@@ -4,17 +4,23 @@ export function createStuffNode(stf, id, actions) {
 
     const span = document.createElement("span")
     span.textContent = stf.raw
+    li.append(span)
 
-    // recover button
     let btn = document.createElement("button")
-    btn.type = 'button'
-    btn.className = "recoverBtn"
-    btn.textContent = 'r'
-    btn.onclick = () => {
-        console.log("recover button is pressed")
-        actions.recover(stf, id)
+
+    if (stf.is_del) {
+
+        // recover button
+        btn.type = 'button'
+        btn.className = "iconfont icon-huifu"
+        btn.title = "recover"
+        btn.onclick = () => {
+            console.log("recover button is pressed")
+            actions.recover(stf, id)
+        }
+        li.append(btn)
     }
-    li.append(span, btn)
+
 
 
     // update button
@@ -22,8 +28,9 @@ export function createStuffNode(stf, id, actions) {
 
     btn = document.createElement("button")
     btn.type = "button"
-    btn.textContent = 'e'
-    btn.className = "updateBtn"
+    btn.className = "iconfont icon-bianji"
+    btn.style.fontSize = "20px"
+    btn.title = "edit"
     btn.onclick = () => {
         console.log("updating button is pressed")
         actions.update(stf, id)
@@ -33,12 +40,13 @@ export function createStuffNode(stf, id, actions) {
     // soft-delete button
     btn = document.createElement('button')
     btn.type = 'button'
-    btn.textContent = 'x'
-    btn.className = "deleteBtn"
+    btn.className = "iconfont icon-shanchu"
+    btn.title = "delete"
     btn.onclick = () => {
         console.log("delete button is pressed")
         actions.delete(stf, id)
     }
+
 
     li.append(btn)
 

@@ -1,0 +1,30 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "108768",
+      "name": "编辑",
+      "font_class": "bianji",
+      "unicode": "f02d2",
+      "unicode_decimal": 983762
+    },
+    {
+      "icon_id": "375522",
+      "name": "恢复",
+      "font_class": "huifu",
+      "unicode": "e69a",
+      "unicode_decimal": 59034
+    },
+    {
+      "icon_id": "11372693",
+      "name": "删除",
+      "font_class": "shanchu",
+      "unicode": "e8b6",
+      "unicode_decimal": 59574
+    }
+  ]
+}
