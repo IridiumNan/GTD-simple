@@ -1,11 +1,62 @@
 package web
 
 import (
+	"io/fs"
+	"log/slog"
+	"net/http"
+	"os"
 	"time"
 
+	"github.com/IridiumNan/GTD-simple/front"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
+
+func setfrontFS() fs.FS {
+	if devDir := viper.GetString("service.front.dir"); devDir != "" {
+		// for develop mode, read the dir directly, no need to rebuild this cli
+		slog.Info("using the front dir directly (Only do this for development)", "path", devDir)
+		return os.DirFS(devDir)
+	}
+
+	slog.Info("using the embeded frontend source")
+	return front.FS
+}
+
+var frontFS fs.FS
+
+func Router() *gin.Engine {
+	frontFS = setfrontFS()
+	r := gin.Default()
+	// register backend endpoints
+	r.POST("/capture/create", handlerCaptureCreate)
+
+	r.DELETE("/capture/delete/:id", handlerCaptureDelete)
+	r.DELETE("/capture/multiDel", handlerCaptureMultiDel)
+
+	r.POST("/capture/update", handlerCaptureUpdate)
+
+	r.GET("/capture/fetch/:id", handlerCaptureFetch)
+
+	r.DELETE("/capture/clear", handlerCaptureClear)
+
+	r.GET("/capture/all/*filter", handlerCaptureAll)
+
+	r.POST("/capture/flush", handlerCaptureFlush)
+
+	// static files
+	r.NoRoute(func(c *gin.Context) {
+		if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		http.FileServer(http.FS(frontFS)).ServeHTTP(c.Writer, c.Request)
+	})
+
+	return r
+}
 
 // BackRouter return the router for backend endpoints
 func BackRouter() *gin.Engine {

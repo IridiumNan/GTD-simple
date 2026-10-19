@@ -67,9 +67,7 @@ func LoadConfig() error {
 }
 
 func setDefault() {
-	viper.SetDefault("service.front.dir", "./front")
-	viper.SetDefault("service.front.addr", "127.0.0.1:8000")
-	viper.SetDefault("service.backend.addr", "127.0.0.1:8080")
+	viper.SetDefault("service.addr", "127.0.0.1:8000")
 	viper.SetDefault("store.dir", "store")
 	viper.SetDefault("store.file", "data.json")
 }

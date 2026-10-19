@@ -16,11 +16,6 @@ jobs:
         with:
           go-version-file: "go.mod"
 
-      - name: prepare
-        run: |
-          sed -i 's/dev/dep/g' ./front/js/capture/config/config.js
-          cat ./front/js/capture/config/config.js
-          tar -cJf ./internal/utils/front.tar.xz ./front
 
       - name: Build then Deploy
         run: |

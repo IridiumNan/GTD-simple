@@ -1,10 +1,10 @@
 [service.front]
 # dir is the default front-end file path
-dir = "./front"
-addr = "127.0.0.1:8000"
+# Only uncomment it when develop locally
+# dir = "./front"
 
-[service.backend]
-addr = "127.0.0.1:8080"
+[service]
+addr = "127.0.0.1:8000"
 
 [store]
 dir = "store"

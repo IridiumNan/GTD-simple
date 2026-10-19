@@ -1,15 +1,7 @@
 import * as URL from "./url.js"
-import { Mode } from "../config/config.js"
-import { ModeDeploy, ModeDevelop } from "../config/define.js"
 
 
-let captureURL = ""
-if (Mode == ModeDeploy) {
-    captureURL = "http://100.120.81.67:8080/capture/"
-}
-if (Mode == ModeDevelop) {
-    captureURL = "http://localhost:8080/capture/"
-}
+let captureURL = "/capture/"
 
 // captureCreate return the created stuff id
 export async function captureCreate(raw) {
