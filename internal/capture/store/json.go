@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 
 	"github.com/IridiumNan/GTD-simple/internal/models"
 	"github.com/IridiumNan/GTD-simple/internal/utils"
@@ -32,6 +33,9 @@ type JSONStore struct {
 
 	// cache stat
 	stat *models.StuffStat
+
+	// lock for map
+	mu sync.RWMutex
 }
 
 // markWrite update [JSONStore.change] and [JSONStore.flushed] as data updated
@@ -45,12 +49,18 @@ func (js *JSONStore) markWrite() {
 // it just add new stuff to map
 // Overwrite the old one
 func (js *JSONStore) Create(s *models.Stuff) {
+	js.mu.Lock()
+	defer js.mu.Unlock()
+
 	js.stuffs[s.ID] = s
+
 	js.markWrite()
 }
 
 // Delete is the implement for [models.Store.Delete]
 func (js *JSONStore) Delete(id string) bool {
+	js.mu.Lock()
+	defer js.mu.Unlock()
 	if _, ok := js.stuffs[id]; !ok {
 		// It means this Stuff id not exist
 		return false
@@ -64,6 +74,8 @@ func (js *JSONStore) Delete(id string) bool {
 // Fetch is the implement for [models.Store.Fetch]
 // return nil if this id not found on map
 func (js *JSONStore) Fetch(id string) *models.Stuff {
+	js.mu.RLock()
+	defer js.mu.RUnlock()
 	s, ok := js.stuffs[id]
 	if !ok {
 		return nil
@@ -106,6 +118,8 @@ func (js *JSONStore) Clear() {
 
 // Flush is a implement for [models.Store.Flush]
 func (js *JSONStore) Flush() error {
+	js.mu.RLock()
+	defer js.mu.RUnlock()
 	if js.flushed {
 		slog.Debug("all data is updated, skip flush request")
 		return nil
@@ -133,6 +147,8 @@ func (js *JSONStore) Flush() error {
 // Stat is implement for [models.Store.Stat]
 func (js *JSONStore) Stat() *models.StuffStat {
 	// return cached stat
+	js.mu.RLock()
+	defer js.mu.RUnlock()
 	if !js.change && js.stat != nil {
 		return js.stat
 	}
@@ -197,6 +213,7 @@ func loadFromJSON(file string) *JSONStore {
 		flushed: true,
 		change:  false,
 		stat:    nil,
+		mu:      sync.RWMutex{},
 	}
 }
 
