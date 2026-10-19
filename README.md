@@ -27,15 +27,3 @@ It use html, js, golang
 API document: [`/docs/capture_api.md`](/docs/capture_api.md)
 
 API curl script: [`/scripts/request.sh`](./scripts/request.sh)
-
----
-
-## Pack
-
-You should pack the front dir as tar.xz then golang cli will embed it.
-
-Just run script
-
-```bash
-bash pack-front.sh
-```

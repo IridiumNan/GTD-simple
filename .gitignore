@@ -4,3 +4,4 @@ config_test/
 config.toml
 front.tar.xz
 .codewhale/
+local/

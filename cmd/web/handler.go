@@ -46,6 +46,7 @@ func handlerCaptureDelete(c *gin.Context) {
 	exist := store.Delete(id)
 	if !exist {
 		c.JSON(http.StatusNotFound, NewResponse(fmt.Sprintf("stuff with id: %s not found, this request is omitted", id), nil))
+		return
 	}
 
 	c.JSON(http.StatusOK, NewResponse(fmt.Sprintf("stuff has been marked as deleted, id: %s", id),
@@ -59,7 +60,7 @@ func handlerCaptureMultiDel(c *gin.Context) {
 		List []string `json:"id_list"`
 	}
 	type multiDelBody struct {
-		Data idList `json:'data`
+		Data idList `json:"data"`
 	}
 
 	var reqJSON multiDelBody
