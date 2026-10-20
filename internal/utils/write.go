@@ -54,6 +54,7 @@ func AtomicWrite(data []byte, file string) error {
 		slog.Warn("AtomicWrite: error while closing the tmp file", "err", err.Error())
 	}
 
+	slog.Debug("AtomicWrite: renaming tmp file", "tmp_path", tmp.Name(), "target_path", file)
 	err = os.Rename(tmp.Name(), file)
 	if err != nil {
 		return fmt.Errorf("AtomicWrite: error while renaming the tmp for persistent data, tmp file path: %s, err: %s", tmp.Name(), err.Error())

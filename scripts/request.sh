@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-baseURL='http://localhost:8080'
+baseURL='http://localhost:8000'
 id='28ee7b93e1b8876622c0'
 
 echo -e "creating a new stuff with id: $id\n\n"
