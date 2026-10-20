@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -24,9 +25,20 @@ func buildfrontFS() fs.FS {
 	return front.FS
 }
 
+func timeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer cancel()
+
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
 func Router() *gin.Engine {
 	frontFS := buildfrontFS()
 	r := gin.Default()
+	r.Use(timeoutMiddleware(2 * time.Second))
 	// register backend endpoints
 	r.POST("/capture/create", handlerCaptureCreate)
 

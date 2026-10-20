@@ -133,7 +133,7 @@ func (js *JSONStore) Flush() error {
 		return fmt.Errorf("error while marshal stuffs into byte data, err: %s", err.Error())
 	}
 
-	err = utils.EnsureWrite(data, js.fp)
+	err = utils.AtomicWrite(data, js.fp)
 	if err != nil {
 		return fmt.Errorf("error while writing json byte data into json file, file: %s, err: %s", js.fp, err.Error())
 	}
