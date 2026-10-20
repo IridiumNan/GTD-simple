@@ -4,11 +4,14 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/IridiumNan/GTD-simple/cmd/web"
 	"github.com/IridiumNan/GTD-simple/internal/capture/store"
@@ -26,20 +29,13 @@ var serveCmd = &cobra.Command{
 	Run: runServe,
 }
 
-func handlerSig(c <-chan os.Signal) {
+func handlerSig(c <-chan os.Signal, shutdownFunc func()) {
 	s := <-c
 
 	switch s {
 	case syscall.SIGINT, syscall.SIGTERM:
-		slog.Info("receiving signal sigint or sigterm, flushing data into disk")
-		stat := store.Stat()
-		slog.Info("current store stat", "stat", stat.String())
 
-		err := store.Flush()
-		if err != nil {
-			slog.Error("error while flushing data into disk", "error", err)
-		}
-
+		shutdownFunc()
 		os.Exit(0)
 	}
 
@@ -53,14 +49,41 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	go handlerSig(sig)
-
 	r := web.Router()
 	addr := viper.GetString("service.addr")
-	err := r.Run(addr)
-	if err != nil {
-		log.Fatalf("error while starting serve, err: %s", err.Error())
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r.Handler(),
 	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Listen: %s\n", err)
+		}
+	}()
+
+	handlerSig(sig, func() {
+		// report current stat
+		slog.Info("receiving signal sigint or sigterm, begin shutdown service graceful")
+		stat := store.Stat()
+		slog.Info("current store stat", "stat", stat.String())
+
+		// shutdown the server
+		timeoutSecond := 5
+		slog.Info("try to shutdown server with timeout", "timeoutSecond", timeoutSecond)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSecond)*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			slog.Error("Server shutdown err", "err", err)
+		}
+
+		// flush data into disk
+		slog.Info("begin to flushing data into disk")
+		err := store.Flush()
+		if err != nil {
+			slog.Error("error while flushing data into disk", "error", err)
+		}
+	})
 }
 
 func init() {
