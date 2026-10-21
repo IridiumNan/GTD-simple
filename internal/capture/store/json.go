@@ -91,6 +91,9 @@ func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
 		slog.Error("error while flushing data into json file before list all", "err", err)
 	}
 
+	js.mu.Lock()
+	defer js.mu.Unlock()
+
 	if f == nil {
 		return utils.MapV(js.stuffs)
 	}
@@ -108,6 +111,8 @@ func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
 // Clear is an implement for [models.Store.Clear]
 // remove all stuffs that has been deleted
 func (js *JSONStore) Clear() {
+	js.mu.Lock()
+	defer js.mu.Unlock()
 	for id, s := range js.stuffs {
 		if s.IsDel {
 			delete(js.stuffs, id)
@@ -128,6 +133,7 @@ func (js *JSONStore) Flush() error {
 	slog.Debug("there are something new need to be updated, try to flush", "file", js.fp)
 
 	jd := JSONData{Stuffs: utils.MapV(js.stuffs)}
+
 	data, err := json.Marshal(jd)
 	if err != nil {
 		return fmt.Errorf("error while marshal stuffs into byte data, err: %s", err.Error())

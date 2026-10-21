@@ -5,11 +5,14 @@ package cmd
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -29,13 +32,16 @@ var serveCmd = &cobra.Command{
 	Run: runServe,
 }
 
-func handlerSig(c <-chan os.Signal, shutdownFunc func()) {
+func handlerSig(c <-chan os.Signal, shutdownFunc func() error) {
 	s := <-c
 
 	switch s {
 	case syscall.SIGINT, syscall.SIGTERM:
 
-		shutdownFunc()
+		err := shutdownFunc()
+		if err != nil {
+			log.Fatal(err)
+		}
 		os.Exit(0)
 	}
 
@@ -57,15 +63,15 @@ func runServe(cmd *cobra.Command, args []string) {
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Listen: %s\n", err)
+			slog.Error("error while listen", "err", err)
+			return
 		}
 	}()
 
-	handlerSig(sig, func() {
-		// report current stat
+	handlerSig(sig, func() error {
+		var errMsg strings.Builder
+
 		slog.Info("receiving signal sigint or sigterm, begin shutdown service graceful")
-		stat := store.Stat()
-		slog.Info("current store stat", "stat", stat.String())
 
 		// shutdown the server
 		timeoutSecond := 5
@@ -75,14 +81,44 @@ func runServe(cmd *cobra.Command, args []string) {
 
 		if err := srv.Shutdown(ctx); err != nil {
 			slog.Error("Server shutdown err", "err", err)
+			fmt.Fprintf(&errMsg, "error while server shutdown, err: %s", err)
+		}
+
+		// report current stat
+		statDone := make(chan error, 1)
+		go func() {
+			stat := store.Stat()
+			slog.Info("current store stat", "stat", stat.String())
+			statDone <- nil
+		}()
+		select {
+		case <-statDone:
+			slog.Info("stat query done success")
+		case <-time.After(3 * time.Second):
+			slog.Error("stat query timeout, continue flush data to disk")
 		}
 
 		// flush data into disk
-		slog.Info("begin to flushing data into disk")
-		err := store.Flush()
-		if err != nil {
-			slog.Error("error while flushing data into disk", "error", err)
+		flushDone := make(chan error, 1)
+		go func() {
+			slog.Info("begin to flushing data into disk")
+			flushDone <- store.Flush()
+		}()
+		select {
+		case err := <-flushDone:
+			if err != nil {
+				slog.Error("error while flushing data into disk", "error", err)
+				fmt.Fprintf(&errMsg, "error while flushing data into disk, err: %s", err)
+			}
+		case <-time.After(3 * time.Second):
+			slog.Error("flush data timeout, quit now, RAM data may lost")
 		}
+
+		if errMsg.Len() != 0 {
+			return errors.New(errMsg.String())
+		}
+
+		return nil
 	})
 }
 

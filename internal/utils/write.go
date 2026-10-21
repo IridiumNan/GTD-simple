@@ -37,6 +37,7 @@ func AtomicWrite(data []byte, file string) error {
 	}
 
 	tmp, err := os.CreateTemp(dir, "tmp-*")
+	defer os.Remove(tmp.Name())
 	if err != nil {
 		return fmt.Errorf("AtomicWrite: error while creating a tmp file on target dir: %s, err: %s", dir, err.Error())
 	}
@@ -58,6 +59,11 @@ func AtomicWrite(data []byte, file string) error {
 	err = os.Rename(tmp.Name(), file)
 	if err != nil {
 		return fmt.Errorf("AtomicWrite: error while renaming the tmp for persistent data, tmp file path: %s, err: %s", tmp.Name(), err.Error())
+	}
+
+	err = os.Chmod(file, 0o644)
+	if err != nil {
+		return fmt.Errorf("error while chmod 600 -> 644, err: %s", err)
 	}
 
 	return nil
