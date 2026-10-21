@@ -90,8 +90,8 @@ func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
 	if err != nil {
 		slog.Error("error while flushing data into json file before list all", "err", err)
 	}
-
 	js.mu.Lock()
+
 	defer js.mu.Unlock()
 
 	if f == nil {
@@ -123,6 +123,10 @@ func (js *JSONStore) Clear() {
 
 // Flush is a implement for [models.Store.Flush]
 func (js *JSONStore) Flush() error {
+	if js.flushed {
+		slog.Info("all data is updated, skip flush request")
+		return nil
+	}
 	jd := js.prepFlush()
 
 	data, err := json.Marshal(jd)
@@ -146,12 +150,8 @@ func (js *JSONStore) Flush() error {
 func (js *JSONStore) prepFlush() *JSONData {
 	js.mu.RLock()
 	defer js.mu.RUnlock()
-	if js.flushed {
-		slog.Debug("all data is updated, skip flush request")
-		return nil
-	}
 
-	slog.Debug("there are something new need to be updated, try to flush", "file", js.fp)
+	slog.Info("there are something new need to be updated, try to flush", "file", js.fp)
 
 	jd := JSONData{Stuffs: utils.MapV(js.stuffs)}
 

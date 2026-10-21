@@ -57,9 +57,14 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	r := web.Router()
 	addr := viper.GetString("service.addr")
+	timeout := 5 * time.Second
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: r.Handler(),
+		Addr:              addr,
+		Handler:           r.Handler(),
+		ReadTimeout:       timeout,
+		ReadHeaderTimeout: timeout,
+		WriteTimeout:      timeout,
+		IdleTimeout:       6 * timeout,
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -68,6 +73,8 @@ func runServe(cmd *cobra.Command, args []string) {
 		}
 	}()
 
+	// a closure function for handle the [syscall.SIGINT] and [syscall.SIGTERM] signal
+	// for graceful shutdown
 	handlerSig(sig, func() error {
 		var errMsg strings.Builder
 
