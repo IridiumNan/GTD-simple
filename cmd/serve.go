@@ -73,14 +73,18 @@ func runServe(cmd *cobra.Command, args []string) {
 		}
 	}()
 
+	slog.Info("starting auto flushing data into disk")
+	go store.AutoFlush()
+
 	// a closure function for handle the [syscall.SIGINT] and [syscall.SIGTERM] signal
 	// for graceful shutdown
 	handlerSig(sig, func() error {
 		var errMsg strings.Builder
+		errMsg.Grow(1 << 6)
 
 		slog.Info("receiving signal sigint or sigterm, begin shutdown service graceful")
 
-		// shutdown the server
+		// shutdown the http server with timeout 5s
 		timeoutSecond := 5
 		slog.Info("try to shutdown server with timeout", "timeoutSecond", timeoutSecond)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSecond)*time.Second)
@@ -88,37 +92,38 @@ func runServe(cmd *cobra.Command, args []string) {
 
 		if err := srv.Shutdown(ctx); err != nil {
 			slog.Error("Server shutdown err", "err", err)
-			fmt.Fprintf(&errMsg, "error while server shutdown, err: %s", err)
+			fmt.Fprintf(&errMsg, "error while server shutdown, err: %s\n", err)
 		}
 
-		// report current stat
-		statDone := make(chan error, 1)
-		go func() {
+		// report latest stuff stat
+		err := runWithTimeout(3*time.Second, func() {
 			stat := store.Stat()
-			slog.Info("current store stat", "stat", stat.String())
-			statDone <- nil
-		}()
-		select {
-		case <-statDone:
-			slog.Info("stat query done success")
-		case <-time.After(3 * time.Second):
-			slog.Error("stat query timeout, continue flush data to disk")
+			if stat == nil {
+				fmt.Fprintf(&errMsg, "invalid stat: %v", stat)
+				return
+			}
+			slog.Info("current stat", "stat", stat.String)
+		})
+		if err != nil {
+			fmt.Fprintln(&errMsg, err.Error())
 		}
 
-		// flush data into disk
-		flushDone := make(chan error, 1)
-		go func() {
-			slog.Info("begin to flushing data into disk")
-			flushDone <- store.Flush()
-		}()
-		select {
-		case err := <-flushDone:
+		// Close store
+		err = store.Close()
+		if err != nil {
+			fmt.Fprintf(&errMsg, "error while closing store: %s\n", err)
+		}
+
+		// flushing latest data into disk
+		err = runWithTimeout(3*time.Second, func() {
+			slog.Info("starting flusing data before program exiting")
+			err := store.Flush()
 			if err != nil {
-				slog.Error("error while flushing data into disk", "error", err)
-				fmt.Fprintf(&errMsg, "error while flushing data into disk, err: %s", err)
+				slog.Error("error while flushing before exit", "err", err)
 			}
-		case <-time.After(3 * time.Second):
-			slog.Error("flush data timeout, quit now, RAM data may lost")
+		})
+		if err != nil {
+			fmt.Fprintf(&errMsg, "error while flushing latest data, data may lost err: %s", err)
 		}
 
 		if errMsg.Len() != 0 {
@@ -127,6 +132,22 @@ func runServe(cmd *cobra.Command, args []string) {
 
 		return nil
 	})
+}
+
+// runWithTimeout run this function and wait for wait time
+func runWithTimeout(waitTime time.Duration, f func()) error {
+	done := make(chan int, 1)
+	go func() {
+		f()
+		done <- 0
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-time.After(waitTime):
+		return errors.New("func exec time out, force quit")
+	}
 }
 
 func init() {

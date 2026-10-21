@@ -85,3 +85,13 @@ func Clear() {
 func Stat() *models.StuffStat {
 	return ds.Stat()
 }
+
+// AutoFlush call default store AutoFlush function
+func AutoFlush() {
+	ds.AutoFlush()
+}
+
+// Close call default store Close funtion
+func Close() error {
+	return ds.Close()
+}

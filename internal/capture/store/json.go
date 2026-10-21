@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/IridiumNan/GTD-simple/internal/models"
 	"github.com/IridiumNan/GTD-simple/internal/utils"
@@ -14,6 +16,8 @@ import (
 type JSONData struct {
 	Stuffs []*models.Stuff `json:"stuffs"`
 }
+
+const defaultJSONFlushInterval time.Duration = 5 * time.Second
 
 type JSONStore struct {
 	// stuffs is all stuff on RAM
@@ -25,24 +29,43 @@ type JSONStore struct {
 
 	// flushed mark if current data on RAM has been flushed on file
 	// if false, [Flush] should be called when read data
-	flushed bool
+	// flushed bool
+	// This field is deprecated
+	// you should use [JSONStore.gen] to manage and sync instead
 
 	// change mark if stat change
 	// it just consider the stat cache
-	change bool
+	// change bool
+	// this field is deprecated
+	// you should use [JSONStore.gen] to manage it instead
 
 	// cache stat
 	stat *models.StuffStat
 
 	// lock for map
 	mu sync.RWMutex
-}
 
-// markWrite update [JSONStore.change] and [JSONStore.flushed] as data updated
-// call it when any write action happend on data
-func (js *JSONStore) markWrite() {
-	js.change = true
-	js.flushed = false
+	// latest write generation
+	// +1 when any change on stuffs
+	// NOTE:
+	// remember to add Lock when read this generation
+	gen atomic.Uint64
+
+	// flushGen is the latest generation that has been flushed into disk
+	// assign it as gen when flushed
+	// remember to add Lock
+	flushGen atomic.Uint64
+
+	// statGen is the latest generation for cached [JSONStore.stat]
+	statGen atomic.Uint64
+
+	// interval is the auto Flush interval
+	// set it before call AutoFlush Function
+	interval time.Duration
+
+	autoFlush func()
+
+	done chan any
 }
 
 // Create is the implement for [models.Store.Create]
@@ -54,7 +77,7 @@ func (js *JSONStore) Create(s *models.Stuff) {
 
 	js.stuffs[s.ID] = s
 
-	js.markWrite()
+	js.gen.Add(1)
 }
 
 // Delete is the implement for [models.Store.Delete]
@@ -67,7 +90,7 @@ func (js *JSONStore) Delete(id string) bool {
 	}
 
 	js.stuffs[id].IsDel = true
-	js.markWrite()
+	js.gen.Add(1)
 	return true
 }
 
@@ -84,15 +107,18 @@ func (js *JSONStore) Fetch(id string) *models.Stuff {
 }
 
 // All is the implement for [models.Store.All]
-// every time this function is called, all data will be Flushed into json file
 func (js *JSONStore) All(f func(s *models.Stuff) bool) []*models.Stuff {
-	err := js.Flush()
-	if err != nil {
-		slog.Error("error while flushing data into json file before list all", "err", err)
-	}
-	js.mu.Lock()
+	// WARN:
+	// flush action will automaticaly exec with specific time interval
+	// This code is deprecated
+	//
+	// err := js.Flush()
+	// if err != nil {
+	// 	slog.Error("error while flushing data into json file before list all", "err", err)
+	// }
+	js.mu.RLock()
 
-	defer js.mu.Unlock()
+	defer js.mu.RUnlock()
 
 	if f == nil {
 		return utils.MapV(js.stuffs)
@@ -116,46 +142,56 @@ func (js *JSONStore) Clear() {
 	for id, s := range js.stuffs {
 		if s.IsDel {
 			delete(js.stuffs, id)
-			js.markWrite()
+			js.gen.Add(1)
 		}
 	}
 }
 
 // Flush is a implement for [models.Store.Flush]
 func (js *JSONStore) Flush() error {
-	if js.flushed {
-		slog.Info("all data is updated, skip flush request")
+	// if updated, skip
+	if js.flushGen == js.gen {
+		slog.Debug("all data is updated, skip flush")
 		return nil
 	}
-	jd := js.prepFlush()
+
+	slog.Info("there are something new need to be updated, try to flush", "file", js.fp, "flushed_gen", js.flushGen.Load(), "latest_gen", js.gen.Load())
+	jd, oldGen := js.prepFlush()
 
 	data, err := json.Marshal(jd)
 	if err != nil {
+		slog.Error("error while marshal struct into byte data, rollback flushGen", "latest_gen", js.flushGen.Load(), "old_gen", oldGen)
+		js.flushGen.Store(oldGen)
 		return fmt.Errorf("error while marshal stuffs into byte data, err: %s", err.Error())
 	}
 
 	err = utils.AtomicWrite(data, js.fp)
 	if err != nil {
+		slog.Error("error while writing byte data into file, rollback flushGen", "latest_gen", js.flushGen.Load(), "old_gen", oldGen)
+		js.flushGen.Store(oldGen)
 		return fmt.Errorf("error while writing json byte data into json file, file: %s, err: %s", js.fp, err.Error())
 	}
 
-	slog.Debug("Flush: begin flushing data into json file success", "file", js.fp)
-	js.flushed = true
+	slog.Debug("Flush: flushing data into json file success", "file", js.fp)
 
 	return nil
 }
 
-// prepFlush add read lock then read current status then retuen JSONData
-// Marshal it then write to file
-func (js *JSONStore) prepFlush() *JSONData {
+// prepFlush get current data then update [JSONStore.flushGen]
+// it get all needed status
+// if fail to flush data into disk, assign oldGen to [JSONStore.flushGen]
+func (js *JSONStore) prepFlush() (jd *JSONData, oldGen uint64) {
 	js.mu.RLock()
 	defer js.mu.RUnlock()
 
-	slog.Info("there are something new need to be updated, try to flush", "file", js.fp)
+	// store the olad gen then update
+	// if flush failed, rollback the gen
+	oldGen = js.flushGen.Load()
+	js.flushGen.Store(js.gen.Load())
 
-	jd := JSONData{Stuffs: utils.MapV(js.stuffs)}
+	jd = &JSONData{Stuffs: utils.MapV(js.stuffs)}
 
-	return &jd
+	return
 }
 
 // Stat is implement for [models.Store.Stat]
@@ -163,7 +199,7 @@ func (js *JSONStore) Stat() *models.StuffStat {
 	// return cached stat
 	js.mu.RLock()
 	defer js.mu.RUnlock()
-	if !js.change && js.stat != nil {
+	if js.statGen == js.gen && js.stat != nil {
 		return js.stat
 	}
 
@@ -176,7 +212,7 @@ func (js *JSONStore) Stat() *models.StuffStat {
 	}
 
 	// update stat, so there is no change since current time
-	js.change = false
+	js.statGen.Store(js.gen.Load())
 
 	js.stat = &models.StuffStat{
 		Size:  int64(len(data)),
@@ -186,21 +222,74 @@ func (js *JSONStore) Stat() *models.StuffStat {
 	return js.stat
 }
 
+// genAutoFlush is a function that start the auto flush
+func (js *JSONStore) genAutoFlush() {
+	ticker := time.NewTicker(js.interval)
+
+	slog.Info("JSONStore: starting auto flush", "interval", js.interval)
+	for {
+		select {
+
+		case t := <-ticker.C:
+			slog.Debug("auto flush", "time", t.String())
+			err := js.Flush()
+			if err != nil {
+				slog.Error("error while flushing data", "err", err)
+			}
+		case <-js.done:
+			slog.Info("stop auto flush...")
+			ticker.Stop()
+		}
+	}
+}
+
+func (js *JSONStore) Close() error {
+	js.done <- true
+
+	return nil
+}
+
+func (js *JSONStore) AutoFlush() {
+	if js.autoFlush != nil {
+		js.autoFlush()
+		return
+	}
+
+	js.autoFlush = sync.OnceFunc(js.genAutoFlush)
+	js.autoFlush()
+}
+
+// SetInterval set the interval for auto flush
+// assign this before [JSONStore.AutoFlush] else it will be [defaultJSONFlushInterval]
+func (js *JSONStore) SetInterval(interval time.Duration) *JSONStore {
+	if interval < 0 {
+		slog.Warn("invalid negtive interval, using the default interval instead", "given", interval.String(), "default", defaultJSONFlushInterval.String())
+		js.interval = defaultJSONFlushInterval
+		return js
+	}
+
+	slog.Info("set the interval manually", "interval", interval.String())
+	js.interval = interval
+
+	return js
+}
+
 // NewJSONStore creating a new json store with given file path
+// default flush interval is [defaultJSONFlushInterval]
 func NewJSONStore(file string) *JSONStore {
 	// try to load all data from given file path
 	js := loadFromJSON(file)
 	if js != nil {
-		return js
+		return js.SetInterval(defaultJSONFlushInterval)
 	}
 
 	slog.Info("load from disk failed, creating a new store", "file", file)
 	return &JSONStore{
-		stuffs:  make(map[string]*models.Stuff, 10),
-		fp:      file,
-		flushed: true,
-		change:  false,
-		stat:    nil,
+		stuffs:   make(map[string]*models.Stuff, 10),
+		fp:       file,
+		stat:     nil,
+		interval: defaultJSONFlushInterval,
+		done:     make(chan any, 1),
 	}
 }
 
@@ -222,12 +311,11 @@ func loadFromJSON(file string) *JSONStore {
 	slog.Debug("load stuffs from disk success", "file", file, "size", len(data))
 
 	return &JSONStore{
-		stuffs:  buildStuffMap(jd.Stuffs),
-		fp:      file,
-		flushed: true,
-		change:  false,
-		stat:    nil,
-		mu:      sync.RWMutex{},
+		stuffs: buildStuffMap(jd.Stuffs),
+		fp:     file,
+		stat:   nil,
+		mu:     sync.RWMutex{},
+		done:   make(chan any, 1),
 	}
 }
 

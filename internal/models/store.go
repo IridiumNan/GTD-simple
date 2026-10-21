@@ -30,4 +30,13 @@ type Store interface {
 
 	// Flush write all data on RAM to disk
 	Flush() error
+
+	// AutoFlush is a [sync.OnceFunc]
+	// which flush all data into disk when elapse reach interval
+	AutoFlush()
+
+	// Close function will flush data automatically then stop connection
+	// it's save to call this function across goroutine bcs it wrapped by a [sync.OnceFunc]
+	// NOTE: This function will not flush the latest data, remeber to flush manually
+	Close() error
 }
