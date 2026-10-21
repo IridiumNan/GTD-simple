@@ -123,16 +123,7 @@ func (js *JSONStore) Clear() {
 
 // Flush is a implement for [models.Store.Flush]
 func (js *JSONStore) Flush() error {
-	js.mu.RLock()
-	defer js.mu.RUnlock()
-	if js.flushed {
-		slog.Debug("all data is updated, skip flush request")
-		return nil
-	}
-
-	slog.Debug("there are something new need to be updated, try to flush", "file", js.fp)
-
-	jd := JSONData{Stuffs: utils.MapV(js.stuffs)}
+	jd := js.prepFlush()
 
 	data, err := json.Marshal(jd)
 	if err != nil {
@@ -148,6 +139,23 @@ func (js *JSONStore) Flush() error {
 	js.flushed = true
 
 	return nil
+}
+
+// prepFlush add read lock then read current status then retuen JSONData
+// Marshal it then write to file
+func (js *JSONStore) prepFlush() *JSONData {
+	js.mu.RLock()
+	defer js.mu.RUnlock()
+	if js.flushed {
+		slog.Debug("all data is updated, skip flush request")
+		return nil
+	}
+
+	slog.Debug("there are something new need to be updated, try to flush", "file", js.fp)
+
+	jd := JSONData{Stuffs: utils.MapV(js.stuffs)}
+
+	return &jd
 }
 
 // Stat is implement for [models.Store.Stat]
