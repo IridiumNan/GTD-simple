@@ -156,8 +156,8 @@ func handlerCaptureAll(c *gin.Context) {
 	stuffs := store.All(f)
 
 	if len(stuffs) == 0 {
-		c.JSON(http.StatusNotFound, NewResponse("These is no stuff", gin.H{
-			"stuffs": nil,
+		c.JSON(http.StatusOK, NewResponse("These is no stuff", gin.H{
+			"stuffs": stuffs,
 			"stat":   store.Stat(),
 		}))
 		return
