@@ -1,11 +1,14 @@
 package store_test
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/IridiumNan/GTD-simple/internal/capture/store"
 	"github.com/IridiumNan/GTD-simple/internal/models"
 )
+
+const n = 100
 
 // TestStore_CreateAndFetch tests creating a new stuff and fetching it by ID[cite: 1, 2].
 func TestStore_CreateAndFetch(t *testing.T) {
@@ -37,6 +40,7 @@ func TestStore_CreateAndFetch(t *testing.T) {
 
 // TestStore_DeleteAndClear tests soft-deleting a stuff and clearing deleted stuffs[cite: 1, 2].
 func TestStore_DeleteAndClear(t *testing.T) {
+	store.Reload("")
 	store.Clear()
 
 	stuff := models.NewStuff("Stuff to delete")
@@ -71,6 +75,7 @@ func TestStore_DeleteAndClear(t *testing.T) {
 
 // TestStore_AllWithFilter tests retrieving all stuffs using filters[cite: 1, 3].
 func TestStore_AllWithFilter(t *testing.T) {
+	store.Reload("")
 	store.Clear()
 
 	s1 := models.NewStuff("First stuff")
@@ -112,6 +117,7 @@ func TestStore_AllWithFilter(t *testing.T) {
 
 // TestStore_Stat verifies that the store returns valid stat metrics[cite: 1, 2, 3].
 func TestStore_Stat(t *testing.T) {
+	store.Reload("")
 	store.Clear()
 
 	stuff := models.NewStuff("Stat test content")
@@ -129,4 +135,92 @@ func TestStore_Stat(t *testing.T) {
 	if stat.Size <= 0 {
 		t.Errorf("expected stat size to be greater than 0, got %d", stat.Size)
 	}
+}
+
+func TestStoreRace(t *testing.T) {
+	// use a invalid path to confirm no content is loaded and RAM content not flush
+	store.Reload("")
+	// Clean up state if necessary
+	store.Clear()
+
+	stuffs := make([]*models.Stuff, 0, n)
+
+	for range n {
+		stuffs = append(stuffs, models.NewStuff("stuff race"))
+	}
+
+	ready := make(chan struct{}, n)
+	start := make(chan struct{})
+
+	var wg sync.WaitGroup
+
+	for i := range n {
+		wg.Go(func() {
+			stf := stuffs[i]
+
+			ready <- struct{}{}
+			<-start
+
+			store.Create(stf)
+		})
+	}
+
+	for range n {
+		<-ready
+	}
+	close(start)
+	wg.Wait()
+
+	stat := store.Stat()
+	if stat.Count != n {
+		t.Errorf("error while testing concurrent create, want: %d, got: %d", n, stat.Count)
+	}
+
+	ready = make(chan struct{}, n)
+	start = make(chan struct{})
+
+	for i := range n {
+		wg.Go(func() {
+			stf := stuffs[i]
+			ready <- struct{}{}
+			<-start
+			store.Delete(stf.ID)
+		})
+	}
+
+	for range n {
+		<-ready
+	}
+	close(start)
+	wg.Wait()
+
+	stuffs = store.All(func(s *models.Stuff) bool {
+		return !s.IsDel
+	})
+	if len(stuffs) != 0 {
+		t.Errorf("error while testinig deleting all stuffs, want: 0, got: %d", stat.Count)
+	}
+}
+
+func TestMultiClose(t *testing.T) {
+	store.Reload("")
+	start := make(chan struct{})
+	ready := make(chan struct{}, n)
+
+	var wg sync.WaitGroup
+
+	for range n {
+		wg.Go(func() {
+			ready <- struct{}{}
+			<-start
+
+			store.Close()
+		})
+	}
+
+	for range n {
+		<-ready
+	}
+	close(start)
+	wg.Wait()
 }

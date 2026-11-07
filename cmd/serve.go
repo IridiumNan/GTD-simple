@@ -84,15 +84,17 @@ func runServe(cmd *cobra.Command, args []string) {
 
 		slog.Info("receiving signal sigint or sigterm, begin shutdown service graceful")
 
-		// shutdown the http server with timeout 5s
-		timeoutSecond := 5
-		slog.Info("try to shutdown server with timeout", "timeoutSecond", timeoutSecond)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSecond)*time.Second)
-		defer cancel()
+		{
+			// shutdown the http server with timeout 5s
+			slog.Info("try to shutdown server with timeout", "timeoutSecond", 5)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 
-		if err := srv.Shutdown(ctx); err != nil {
-			slog.Error("Server shutdown err", "err", err)
-			fmt.Fprintf(&errMsg, "error while server shutdown, err: %s\n", err)
+			if err := srv.Shutdown(ctx); err != nil {
+				slog.Error("Server shutdown err", "err", err)
+				fmt.Fprintf(&errMsg, "error while server shutdown, err: %s\n", err)
+			}
+
 		}
 
 		// report latest stuff stat

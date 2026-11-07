@@ -66,6 +66,9 @@ type JSONStore struct {
 	autoFlush func()
 
 	done chan any
+
+	// isClose mark if this store has been closed
+	isClose bool
 }
 
 // Create is the implement for [models.Store.Create]
@@ -101,6 +104,7 @@ func (js *JSONStore) Fetch(id string) *models.Stuff {
 	defer js.mu.RUnlock()
 	s, ok := js.stuffs[id]
 	if !ok {
+		slog.Warn("target stuff not found", "id", id)
 		return nil
 	}
 	return s
@@ -150,8 +154,19 @@ func (js *JSONStore) Clear() {
 // Flush is a implement for [models.Store.Flush]
 func (js *JSONStore) Flush() error {
 	// if updated, skip
+	js.mu.RLock()
 	if js.flushGen == js.gen {
 		slog.Debug("all data is updated, skip flush")
+		js.mu.RUnlock()
+		return nil
+	}
+	js.mu.RUnlock()
+
+	// as there is no any action write this file path again (except store init)
+	// there is no need to add lock
+	// WARN: if there is any method modify fp, a RLock required
+	if js.fp == "" {
+		slog.Warn("empty store file path, skip flushing")
 		return nil
 	}
 
@@ -161,14 +176,18 @@ func (js *JSONStore) Flush() error {
 	data, err := json.Marshal(jd)
 	if err != nil {
 		slog.Error("error while marshal struct into byte data, rollback flushGen", "latest_gen", js.flushGen.Load(), "old_gen", oldGen)
+		js.mu.Lock()
 		js.flushGen.Store(oldGen)
+		js.mu.Unlock()
 		return fmt.Errorf("error while marshal stuffs into byte data, err: %s", err.Error())
 	}
 
 	err = utils.AtomicWrite(data, js.fp)
 	if err != nil {
 		slog.Error("error while writing byte data into file, rollback flushGen", "latest_gen", js.flushGen.Load(), "old_gen", oldGen)
+		js.mu.Lock()
 		js.flushGen.Store(oldGen)
+		js.mu.Unlock()
 		return fmt.Errorf("error while writing json byte data into json file, file: %s, err: %s", js.fp, err.Error())
 	}
 
@@ -180,6 +199,7 @@ func (js *JSONStore) Flush() error {
 // prepFlush get current data then update [JSONStore.flushGen]
 // it get all needed status
 // if fail to flush data into disk, assign oldGen to [JSONStore.flushGen]
+// Must ensure the oldGen is a constant value
 func (js *JSONStore) prepFlush() (jd *JSONData, oldGen uint64) {
 	js.mu.RLock()
 	defer js.mu.RUnlock()
@@ -197,8 +217,8 @@ func (js *JSONStore) prepFlush() (jd *JSONData, oldGen uint64) {
 // Stat is implement for [models.Store.Stat]
 func (js *JSONStore) Stat() *models.StuffStat {
 	// return cached stat
-	js.mu.RLock()
-	defer js.mu.RUnlock()
+	js.mu.Lock()
+	defer js.mu.Unlock()
 	if js.statGen == js.gen && js.stat != nil {
 		return js.stat
 	}
@@ -237,14 +257,22 @@ func (js *JSONStore) genAutoFlush() {
 				slog.Error("error while flushing data", "err", err)
 			}
 		case <-js.done:
-			slog.Info("stop auto flush...")
+			slog.Info("store closed, stopping auto flush...")
 			ticker.Stop()
 		}
 	}
 }
 
 func (js *JSONStore) Close() error {
+	js.mu.Lock()
+	defer js.mu.Unlock()
+
+	if js.isClose {
+		return nil
+	}
+
 	js.done <- true
+	js.isClose = true
 
 	return nil
 }

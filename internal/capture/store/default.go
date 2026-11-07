@@ -92,6 +92,7 @@ func AutoFlush() {
 }
 
 // Close call default store Close funtion
+// this is concurrent safe
 func Close() error {
 	return ds.Close()
 }

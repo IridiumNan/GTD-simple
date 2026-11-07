@@ -22,6 +22,7 @@ func genIDByNow() string {
 }
 
 // NewStuff create a new stuff with raw content
+// the ID will auto generated
 func NewStuff(raw string) *Stuff {
 	return &Stuff{
 		ID:    genIDByNow(),
